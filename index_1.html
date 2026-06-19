@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#6e2230" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Khata" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<title>Khata — Payment Ledger</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Albert+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root{
+  --ink:#1c1b1f; --ink-soft:#5a5862; --ink-faint:#8b8893;
+  --page:#e9e6df; --card:#fdfcf9; --card-2:#f6f3ec;
+  --line:#e0dcd1; --line-soft:#eee9df;
+  --oxblood:#6e2230; --oxblood-deep:#551823; --oxblood-tint:#f3e5e6;
+  --gold:#a9854a;
+  --debit:#9a2b2b; --credit:#2e6e4e; --binding:#c0463f;
+  --shadow:0 1px 2px rgba(28,27,31,.05),0 8px 28px rgba(28,27,31,.06);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{font-family:'Albert Sans',system-ui,-apple-system,sans-serif;color:var(--ink);background:var(--page);min-height:100vh;-webkit-font-smoothing:antialiased;line-height:1.45;}
+button{font-family:inherit;cursor:pointer;}
+.wrap{max-width:980px;margin:0 auto;padding:28px 20px 90px;}
+.hidden{display:none !important;}
+
+/* header */
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:20px;}
+.brand{display:flex;flex-direction:column;}
+.mark{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:38px;letter-spacing:-.5px;line-height:1;color:var(--oxblood);}
+.mark em{font-style:italic;font-weight:500;color:var(--gold);}
+.sub{font-size:13px;color:var(--ink-soft);margin-top:7px;letter-spacing:.02em;}
+.head-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center;}
+.btn{border:none;border-radius:10px;padding:11px 16px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px;transition:background .18s,transform .12s,border-color .15s,color .15s;}
+.btn svg{width:16px;height:16px;}
+.btn.primary{background:var(--oxblood);color:#fdfcf9;box-shadow:var(--shadow);}
+.btn.primary:hover{background:var(--oxblood-deep);}
+.btn.primary:active{transform:translateY(1px);}
+.btn.ghost{background:var(--card);border:1px solid var(--line);color:var(--ink-soft);}
+.btn.ghost:hover{border-color:var(--oxblood);color:var(--oxblood);}
+.iconbtn{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--ink-soft);display:inline-flex;transition:all .14s;}
+.iconbtn:hover{color:var(--oxblood);border-color:var(--oxblood);}
+.iconbtn svg{width:17px;height:17px;}
+
+/* summary */
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px 16px;box-shadow:var(--shadow);}
+.stat .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-faint);font-weight:600;}
+.stat .val{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;font-size:22px;font-weight:500;margin-top:7px;letter-spacing:-.5px;}
+.stat .note{font-size:12px;color:var(--ink-soft);margin-top:3px;}
+.stat.accent .val{color:var(--debit);}
+
+/* cards */
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow);}
+.card h3{margin:0 0 12px;font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-faint);font-weight:600;}
+
+/* trend */
+.trend{display:flex;align-items:flex-end;gap:10px;height:128px;}
+.tcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;height:100%;}
+.tcol .tv{font-size:10px;color:var(--ink-faint);font-family:'JetBrains Mono',monospace;}
+.tbar{width:100%;max-width:40px;background:linear-gradient(180deg,var(--oxblood),#9a4150);border-radius:6px 6px 0 0;min-height:3px;transition:height .3s;}
+.tcol .tl{font-size:11px;color:var(--ink-soft);font-weight:500;}
+.tcol.cur .tl{color:var(--oxblood);font-weight:600;}
+
+/* breakdown */
+.bk-tabs{display:inline-flex;background:var(--card-2);border:1px solid var(--line);border-radius:9px;padding:3px;margin-bottom:14px;}
+.bk-tabs button{border:none;background:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;color:var(--ink-soft);}
+.bk-tabs button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow);}
+.mrow{display:grid;grid-template-columns:130px 1fr auto;gap:12px;align-items:center;padding:5px 0;}
+.mrow .mname{font-size:13px;font-weight:500;}
+.bar{height:7px;background:var(--card-2);border-radius:99px;overflow:hidden;}
+.bar span{display:block;height:100%;background:linear-gradient(90deg,var(--oxblood),var(--gold));border-radius:99px;}
+.mrow .mamt{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;font-size:13px;color:var(--ink-soft);}
+
+/* accounts */
+.accts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px;}
+.acct{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 13px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);}
+.acct .dot{width:9px;height:9px;border-radius:99px;background:var(--gold);flex:none;}
+.acct .an{font-size:13px;font-weight:600;}
+.acct .at{font-size:11px;color:var(--ink-soft);font-weight:400;}
+.acct .am{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-faint);}
+.linkbtn{background:none;border:1px dashed var(--line);color:var(--ink-soft);border-radius:10px;padding:9px 13px;font-size:13px;font-weight:500;display:inline-flex;gap:7px;align-items:center;transition:border-color .15s,color .15s;}
+.linkbtn:hover{border-color:var(--oxblood);color:var(--oxblood);}
+.linkbtn svg{width:14px;height:14px;}
+
+/* toolbar */
+.tools{display:flex;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap;}
+.search{flex:1;min-width:170px;position:relative;}
+.search input{width:100%;padding:10px 12px 10px 34px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-size:14px;color:var(--ink);font-family:inherit;}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--ink-faint);}
+.sel{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-size:14px;color:var(--ink);font-family:inherit;}
+.csv{background:none;border:1px solid var(--line);border-radius:10px;padding:10px 13px;font-size:13px;font-weight:500;color:var(--ink-soft);display:inline-flex;gap:7px;align-items:center;}
+.csv:hover{border-color:var(--oxblood);color:var(--oxblood);}
+.csv svg{width:14px;height:14px;}
+
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-faint);font-weight:600;margin:18px 2px 6px;}
+
+/* ledger */
+.ledger{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);position:relative;}
+.ledger::before{content:"";position:absolute;left:78px;top:0;bottom:0;width:1px;background:var(--binding);opacity:.45;}
+.entry{display:flex;align-items:flex-start;gap:14px;padding:15px 18px;border-bottom:1px solid var(--line-soft);position:relative;transition:background .12s;}
+.entry:last-child{border-bottom:none;}
+.entry:hover{background:var(--card-2);}
+.edate{width:62px;flex:none;}
+.edate .d{font-family:'Fraunces',serif;font-size:20px;font-weight:500;line-height:1;}
+.edate .m{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);margin-top:2px;}
+.edate .t{font-size:11px;color:var(--ink-faint);margin-top:5px;font-family:'JetBrains Mono',monospace;}
+.emain{flex:1;min-width:0;padding-left:6px;}
+.payee{font-size:15px;font-weight:600;letter-spacing:-.01em;word-break:break-word;}
+.purpose{font-size:13px;color:var(--ink-soft);margin-top:2px;}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.chip{font-size:11px;font-weight:500;padding:3px 8px;border-radius:99px;background:var(--card-2);border:1px solid var(--line);color:var(--ink-soft);}
+.chip.m{background:var(--oxblood-tint);border-color:#e7cdd0;color:var(--oxblood);}
+.eright{flex:none;display:flex;align-items:flex-start;gap:10px;}
+.eamt{text-align:right;}
+.eamt .num{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;font-size:16px;font-weight:500;letter-spacing:-.3px;}
+.eamt.out .num{color:var(--debit);}
+.eamt.in .num{color:var(--credit);}
+.eamt .dir{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);margin-top:3px;}
+.acts{display:flex;flex-direction:column;gap:4px;}
+.acts .iconbtn{padding:5px;border-color:transparent;background:none;}
+.acts .iconbtn svg{width:14px;height:14px;}
+
+/* empty */
+.empty{text-align:center;padding:54px 24px;}
+.empty .big{font-family:'Fraunces',serif;font-size:22px;margin-bottom:6px;}
+.empty p{color:var(--ink-soft);font-size:14px;max-width:400px;margin:0 auto 18px;}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(28,27,31,.42);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50;animation:fade .18s ease;}
+.modal{background:var(--card);border-radius:16px;width:100%;max-width:480px;max-height:92vh;overflow:auto;box-shadow:0 24px 70px rgba(28,27,31,.28);animation:rise .22s cubic-bezier(.2,.7,.3,1);}
+.modal.wide{max-width:620px;}
+.mhead{padding:20px 22px 4px;}
+.mhead h2{font-family:'Fraunces',serif;font-weight:500;font-size:22px;margin:0;}
+.mhead p{font-size:13px;color:var(--ink-soft);margin:4px 0 0;}
+.mbody{padding:14px 22px 22px;}
+.toggle{display:flex;background:var(--card-2);border:1px solid var(--line);border-radius:10px;padding:3px;margin-bottom:16px;}
+.toggle button{flex:1;border:none;background:none;padding:8px;border-radius:7px;font-size:13px;font-weight:600;color:var(--ink-soft);transition:all .14s;}
+.toggle button.on{background:var(--card);box-shadow:var(--shadow);}
+.toggle button.on.out{color:var(--debit);}
+.toggle button.on.in{color:var(--credit);}
+.field{margin-bottom:13px;}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;}
+.field input,.field select,.field textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:9px;background:var(--card);font-size:14px;color:var(--ink);font-family:inherit;transition:border-color .14s,box-shadow .14s;}
+.field textarea{resize:vertical;min-height:120px;line-height:1.5;}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(169,133,74,.18);}
+.amt-input{position:relative;}
+.amt-input span{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink-faint);font-family:'JetBrains Mono',monospace;font-size:15px;}
+.amt-input input{padding-left:28px;font-family:'JetBrains Mono',monospace;font-size:16px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.mfoot{display:flex;gap:10px;margin-top:18px;}
+.mfoot .btn{flex:1;justify-content:center;}
+.mfoot .btn.danger{flex:none;color:var(--debit);background:var(--card);border:1px solid #e7cdcd;}
+.mfoot .btn.danger:hover{background:#fbf0f0;}
+.mfoot .btn:disabled{opacity:.45;cursor:not-allowed;}
+.note{font-size:12px;color:var(--ink-soft);background:var(--card-2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;line-height:1.5;}
+
+/* settings */
+.sect{margin-top:20px;}
+.sect:first-child{margin-top:0;}
+.sect h4{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-faint);font-weight:600;margin:0 0 9px;}
+.srow{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card-2);margin-bottom:8px;}
+.srow .si{flex:1;min-width:0;}
+.srow .sn{font-weight:600;font-size:14px;}
+.srow .sm{font-size:12px;color:var(--ink-soft);}
+.srow .iconbtn{background:var(--card);}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--card-2);}
+.switch .lbl2{font-size:14px;font-weight:500;}
+.switch input{appearance:none;-webkit-appearance:none;width:42px;height:24px;background:var(--line);border-radius:99px;position:relative;cursor:pointer;transition:background .18s;flex:none;}
+.switch input:checked{background:var(--oxblood);}
+.switch input::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:99px;transition:left .18s;}
+.switch input:checked::after{left:20px;}
+.datagrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.datagrid .btn{justify-content:center;}
+.danger-text{color:var(--debit) !important;border-color:#e7cdcd !important;}
+
+/* sms drafts */
+.drafts{display:flex;flex-direction:column;gap:10px;margin-top:6px;}
+.draft{border:1px solid var(--line);border-radius:11px;padding:12px;background:var(--card-2);}
+.draft.off{opacity:.5;}
+.draft-top{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
+.draft-top input[type=checkbox]{width:17px;height:17px;accent-color:var(--oxblood);}
+.draft-top .ddir{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:2px 8px;border-radius:99px;}
+.draft-top .ddir.out{background:#fbeaea;color:var(--debit);}
+.draft-top .ddir.in{background:#e8f2ec;color:var(--credit);}
+.draft-top .draw{font-size:11px;color:var(--ink-faint);margin-left:auto;font-style:italic;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.draft-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.draft-grid .field{margin:0;}
+.draft-grid .field.full{grid-column:1/-1;}
+.draft-grid label{font-size:10px;}
+.draft-grid input,.draft-grid select{padding:8px 9px;font-size:13px;}
+
+/* lock */
+.lockscreen{position:fixed;inset:0;background:var(--page);display:flex;align-items:center;justify-content:center;padding:20px;z-index:80;}
+.lockcard{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:34px 30px;text-align:center;max-width:320px;width:100%;}
+.lockcard .mark{font-size:42px;margin-bottom:6px;}
+.lockcard p{font-size:13px;color:var(--ink-soft);margin:0 0 18px;}
+.lockcard input{width:100%;text-align:center;letter-spacing:.4em;font-size:22px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card-2);margin-bottom:14px;font-family:'JetBrains Mono',monospace;}
+.lockcard input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(169,133,74,.18);}
+.lockcard .btn{width:100%;justify-content:center;}
+.lockerr{color:var(--debit);font-size:13px;font-weight:500;margin-top:12px;min-height:18px;}
+
+/* toast */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fdfcf9;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:0 12px 36px rgba(0,0,0,.3);z-index:90;animation:fade .2s ease;}
+
+.foot{text-align:center;color:var(--ink-faint);font-size:12px;margin-top:26px;line-height:1.6;}
+
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+@media (max-width:680px){
+  .summary{grid-template-columns:1fr 1fr;}
+  .mark{font-size:32px;}
+  .ledger::before{display:none;}
+  .entry{flex-wrap:wrap;gap:10px;}
+  .edate{width:auto;display:flex;align-items:baseline;gap:6px;}
+  .edate .m{margin-top:0;}.edate .t{margin-top:0;margin-left:auto;}
+  .eright{width:100%;justify-content:space-between;}
+  .mrow{grid-template-columns:104px 1fr auto;}
+  .draft-grid,.grid2,.datagrid{grid-template-columns:1fr;}
+  .trend{gap:5px;}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+</style>
+</head>
+<body>
+
+<!-- lock screen -->
+<div id="lock" class="lockscreen hidden">
+  <div class="lockcard">
+    <div class="mark">Khata<em>.</em></div>
+    <p>Enter your PIN to open your ledger.</p>
+    <input id="lock-pin" type="password" inputmode="numeric" maxlength="6" placeholder="••••" autocomplete="off" />
+    <button class="btn primary" id="lock-go">Unlock</button>
+    <div class="lockerr" id="lock-err"></div>
+  </div>
+</div>
+
+<!-- app -->
+<div class="wrap" id="app-wrap" style="display:none">
+  <div class="head">
+    <div class="brand">
+      <div class="mark">Khata<em>.</em></div>
+      <div class="sub">Your private payment ledger — every rupee, recorded by you.</div>
+    </div>
+    <div class="head-actions">
+      <button class="iconbtn" id="btn-settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button>
+      <button class="btn ghost" id="btn-import">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+        Import SMS
+      </button>
+      <button class="btn primary" id="btn-add">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Record payment
+      </button>
+    </div>
+  </div>
+
+  <div class="summary" id="summary"></div>
+  <div id="trend-card"></div>
+  <div id="breakdown-card"></div>
+  <div class="accts" id="accts"></div>
+
+  <div class="tools">
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="search" placeholder="Search payee, purpose, category…" />
+    </div>
+    <select class="sel" id="f-method"></select>
+    <select class="sel" id="f-month"></select>
+    <button class="csv" id="btn-csv">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+      CSV
+    </button>
+  </div>
+
+  <div class="eyebrow" id="ledger-count">The ledger</div>
+  <div class="ledger" id="ledger"></div>
+
+  <div class="foot">
+    Records are stored privately in your browser and persist across sessions.<br>
+    This is a manual ledger with SMS import — it does not connect to your bank directly.
+  </div>
+</div>
+
+<div id="modal-root"></div>
+<input type="file" id="restore-file" accept="application/json" class="hidden" />
+<div id="toast-root"></div>
+
+<script>
+"use strict";
+/* ============================ constants ============================ */
+const METHODS=["UPI","Debit Card","Credit Card","Net Banking","NEFT / RTGS / IMPS","Cash","Cheque","Wallet","Auto-debit"];
+const CATEGORIES=["Rent & Housing","Food & Dining","Bills & Utilities","Education","Transfer","Shopping","Health","Travel","Other"];
+const ACCOUNT_TYPES=["Savings","Current","Credit Card","Wallet"];
+const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const MONTH_NUM={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+
+/* ============================ helpers ============================ */
+const $=s=>document.querySelector(s);
+const pad=n=>String(n).padStart(2,"0");
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const inr=n=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:2}).format(Number(n)||0);
+const inrPlain=n=>new Intl.NumberFormat("en-IN",{maximumFractionDigits:0}).format(Number(n)||0);
+const inrShort=n=>{n=Number(n)||0;if(n>=1e7)return (n/1e7).toFixed(n%1e7?1:0)+"Cr";if(n>=1e5)return (n/1e5).toFixed(n%1e5?1:0)+"L";if(n>=1e3)return (n/1e3).toFixed(n%1e3?1:0)+"k";return String(Math.round(n));};
+const todayStr=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;};
+const nowTime=()=>{const d=new Date();return `${pad(d.getHours())}:${pad(d.getMinutes())}`;};
+function fmtDate(d){if(!d)return{day:"--",mon:"",year:""};const[y,m,dy]=d.split("-").map(Number);return{day:pad(dy),mon:MONTHS[m-1],year:y};}
+function fmtTime(t){if(!t)return"";let[h,mi]=t.split(":").map(Number);const ap=h>=12?"PM":"AM";h=h%12||12;return `${h}:${pad(mi)} ${ap}`;}
+const monthKey=d=>d?d.slice(0,7):"";
+function monthLabel(k){if(!k)return"";const[y,m]=k.split("-").map(Number);return `${MONTHS[m-1]} ${y}`;}
+function hashPin(p){let h=2166136261;const s="khata-salt-"+p;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(36);}
+
+/* ============================ storage ============================ */
+let DB=null, useLS=false;
+function openDB(){
+  return new Promise(res=>{
+    if(!("indexedDB" in window)){useLS=true;return res(null);}
+    let r;
+    try{r=indexedDB.open("khata-db",2);}catch(e){useLS=true;return res(null);}
+    r.onupgradeneeded=e=>{const db=e.target.result;
+      if(!db.objectStoreNames.contains("payments"))db.createObjectStore("payments",{keyPath:"id"});
+      if(!db.objectStoreNames.contains("accounts"))db.createObjectStore("accounts",{keyPath:"id"});
+      if(!db.objectStoreNames.contains("meta"))db.createObjectStore("meta",{keyPath:"key"});
+    };
+    r.onsuccess=e=>{DB=e.target.result;res(DB);};
+    r.onerror=()=>{useLS=true;res(null);};
+  });
+}
+function lsKey(s){return "khata:"+s;}
+function lsAll(store){try{return JSON.parse(localStorage.getItem(lsKey(store))||"[]");}catch(e){return[];}}
+function lsSave(store,arr){try{localStorage.setItem(lsKey(store),JSON.stringify(arr));}catch(e){}}
+function getAll(store){
+  if(useLS||!DB)return Promise.resolve(lsAll(store));
+  return new Promise((res,rej)=>{const tx=DB.transaction(store,"readonly");const rq=tx.objectStore(store).getAll();rq.onsuccess=()=>res(rq.result||[]);rq.onerror=()=>rej(rq.error);});
+}
+function putRec(store,val){
+  if(useLS||!DB){const a=lsAll(store);const i=a.findIndex(x=>x.id===val.id);if(i>=0)a[i]=val;else a.push(val);lsSave(store,a);return Promise.resolve();}
+  return new Promise((res,rej)=>{const tx=DB.transaction(store,"readwrite");tx.objectStore(store).put(val);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});
+}
+function delRec(store,key){
+  if(useLS||!DB){lsSave(store,lsAll(store).filter(x=>x.id!==key));return Promise.resolve();}
+  return new Promise((res,rej)=>{const tx=DB.transaction(store,"readwrite");tx.objectStore(store).delete(key);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});
+}
+function clearStore(store){
+  if(useLS||!DB){lsSave(store,[]);return Promise.resolve();}
+  return new Promise((res,rej)=>{const tx=DB.transaction(store,"readwrite");tx.objectStore(store).clear();tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});
+}
+function metaGet(key){
+  if(useLS||!DB){try{return Promise.resolve(JSON.parse(localStorage.getItem("khata:meta:"+key)||"null"));}catch(e){return Promise.resolve(null);}}
+  return new Promise((res,rej)=>{const tx=DB.transaction("meta","readonly");const rq=tx.objectStore("meta").get(key);rq.onsuccess=()=>res(rq.result?rq.result.value:null);rq.onerror=()=>rej(rq.error);});
+}
+function metaPut(key,value){
+  if(useLS||!DB){localStorage.setItem("khata:meta:"+key,JSON.stringify(value));return Promise.resolve();}
+  return new Promise((res,rej)=>{const tx=DB.transaction("meta","readwrite");tx.objectStore("meta").put({key,value});tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});
+}
+
+/* ============================ state ============================ */
+let payments=[], accounts=[];
+let settings={lock:false,pin:""};
+let filters={query:"",method:"all",month:"all"};
+let bkTab="method";
+
+/* ============================ SMS parser ============================ */
+function parseDate(t){let m;
+  if((m=t.match(/\b(\d{1,2})[-\s\/]([A-Za-z]{3})[a-z]*[-\s\/](\d{2,4})\b/))){const mo=MONTH_NUM[m[2].toLowerCase()];if(mo){let y=+m[3];if(y<100)y=y<70?2000+y:1900+y;return `${y}-${pad(mo)}-${pad(+m[1])}`;}}
+  if((m=t.match(/\b(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})\b/))){let y=+m[3];if(y<100)y=y<70?2000+y:1900+y;return `${y}-${pad(+m[2])}-${pad(+m[1])}`;}
+  if((m=t.match(/\bon\s+(\d{1,2})\s+([A-Za-z]{3})/i))){const mo=MONTH_NUM[m[2].toLowerCase()];if(mo)return `${new Date().getFullYear()}-${pad(mo)}-${pad(+m[1])}`;}
+  return todayStr();
+}
+function parseSMS(text){
+  const t=(text||"").trim();if(!t)return null;const lo=t.toLowerCase();
+  const am=t.match(/(?:rs\.?|inr|₹)\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i);
+  const amount=am?parseFloat(am[1].replace(/,/g,"")):null;
+  if(!amount)return null;
+  let type="out";
+  if(/credit|received|deposit|refund|added/i.test(lo))type="in";
+  if(/debit|spent|paid|withdrawn|\bsent\b|purchase|txn of/i.test(lo))type="out";
+  let method="UPI";
+  if(/upi|vpa|@[a-z]/i.test(lo))method="UPI";
+  else if(/credit card/i.test(lo))method="Credit Card";
+  else if(/debit card|\bcard\b/i.test(lo))method="Debit Card";
+  else if(/neft|rtgs|imps/i.test(lo))method="NEFT / RTGS / IMPS";
+  else if(/net ?banking/i.test(lo))method="Net Banking";
+  else if(/cheque|chq/i.test(lo))method="Cheque";
+  else if(/\batm\b|cash/i.test(lo))method="Cash";
+  const ac=t.match(/(?:a\/c|ac|acct|account|card)\b[^0-9]{0,12}?(\d{3,4})\b/i);
+  const last4=ac?ac[1].slice(-4):"";
+  const date=parseDate(t);
+  let payee="",m;
+  if((m=t.match(/(?:to\s+vpa|vpa)\s+([a-z0-9.\-_]+@[a-z]+)/i)))payee=m[1];
+  else if((m=t.match(/\bat\s+([A-Z0-9][A-Za-z0-9 &._\-]{1,28}?)(?:\s+on\b|\.|,|$)/)))payee=m[1].trim();
+  else if((m=t.match(/(?:trf to|sent to|paid to|\bto\b)\s+([A-Za-z0-9][A-Za-z0-9 &._\-]{1,28}?)(?:\s+on\b|\.|,|\s+ref|\s+upi|\s+via|\s+through|$)/i)))payee=m[1].trim();
+  else if((m=t.match(/([a-z0-9.\-_]+@[a-z]+)/i)))payee=m[1];
+  payee=payee.replace(/\s+(via|through|using|ref).*$/i,"").trim();
+  return {amount,type,method,last4,date,payee,raw:t};
+}
+function splitSMS(block){return block.split(/\n\s*\n+|\n?-{3,}\n?/).map(s=>s.trim()).filter(Boolean);}
+
+/* ============================ derived ============================ */
+function accountById(id){return accounts.find(a=>a.id===id);}
+function accountByLast4(l4){return l4?accounts.find(a=>a.last4===l4):null;}
+function getFiltered(){
+  const q=filters.query.trim().toLowerCase();
+  return payments.filter(p=>{
+    if(filters.method!=="all"&&p.method!==filters.method)return false;
+    if(filters.month!=="all"&&monthKey(p.date)!==filters.month)return false;
+    if(q){const hay=`${p.payee} ${p.purpose} ${p.category} ${p.method}`.toLowerCase();if(!hay.includes(q))return false;}
+    return true;
+  }).sort((a,b)=>`${b.date}T${b.time||"00:00"}`.localeCompare(`${a.date}T${a.time||"00:00"}`));
+}
+function getStats(){
+  const cur=todayStr().slice(0,7);
+  let totalOut=0,monthOut=0,totalIn=0;const byM={},byC={};
+  payments.forEach(p=>{const amt=Number(p.amount)||0;
+    if(p.type==="out"){totalOut+=amt;if(monthKey(p.date)===cur)monthOut+=amt;byM[p.method]=(byM[p.method]||0)+amt;byC[p.category]=(byC[p.category]||0)+amt;}
+    else totalIn+=amt;});
+  return {totalOut,monthOut,totalIn,count:payments.length,byM,byC};
+}
+function monthlyTrend(){
+  const now=new Date();const arr=[];const idx={};
+  for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);const key=`${d.getFullYear()}-${pad(d.getMonth()+1)}`;idx[key]=arr.length;arr.push({key,label:MONTHS[d.getMonth()],sum:0,cur:i===0});}
+  payments.forEach(p=>{if(p.type==="out"){const k=monthKey(p.date);if(k in idx)arr[idx[k]].sum+=Number(p.amount)||0;}});
+  return arr;
+}
+
+/* ============================ render ============================ */
+function render(){renderSummary();renderTrend();renderBreakdown();renderAccounts();renderFilters();renderLedger();}
+
+function renderSummary(){
+  const s=getStats();
+  $("#summary").innerHTML=`
+    <div class="stat accent"><div class="lbl">Sent this month</div><div class="val">${inr(s.monthOut)}</div><div class="note">${monthLabel(todayStr().slice(0,7))}</div></div>
+    <div class="stat"><div class="lbl">Total sent</div><div class="val">${inr(s.totalOut)}</div><div class="note">all time</div></div>
+    <div class="stat"><div class="lbl">Total received</div><div class="val">${inr(s.totalIn)}</div><div class="note">all time</div></div>
+    <div class="stat"><div class="lbl">Entries</div><div class="val">${s.count}</div><div class="note">${accounts.length} account${accounts.length!==1?"s":""}</div></div>`;
+}
+function renderTrend(){
+  const t=monthlyTrend();const max=Math.max(1,...t.map(x=>x.sum));
+  const any=t.some(x=>x.sum>0);
+  if(!any){$("#trend-card").innerHTML="";return;}
+  $("#trend-card").innerHTML=`<div class="card"><h3>Spending · last 6 months</h3><div class="trend">${
+    t.map(c=>`<div class="tcol ${c.cur?"cur":""}"><div class="tv">${c.sum?"₹"+inrShort(c.sum):""}</div><div class="tbar" style="height:${Math.max(3,(c.sum/max)*90)}px"></div><div class="tl">${c.label}</div></div>`).join("")
+  }</div></div>`;
+}
+function renderBreakdown(){
+  const s=getStats();
+  const data=Object.entries(bkTab==="method"?s.byM:s.byC).sort((a,b)=>b[1]-a[1]);
+  if(!data.length){$("#breakdown-card").innerHTML="";return;}
+  const max=data[0][1]||1;
+  $("#breakdown-card").innerHTML=`<div class="card">
+    <div class="bk-tabs"><button data-bk="method" class="${bkTab==="method"?"on":""}">By method</button><button data-bk="category" class="${bkTab==="category"?"on":""}">By category</button></div>
+    ${data.map(([k,amt])=>`<div class="mrow"><div class="mname">${esc(k)}</div><div class="bar"><span style="width:${Math.max(5,(amt/max)*100)}%"></span></div><div class="mamt">₹${inrPlain(amt)}</div></div>`).join("")}
+  </div>`;
+  $("#breakdown-card").querySelectorAll("[data-bk]").forEach(b=>b.onclick=()=>{bkTab=b.dataset.bk;renderBreakdown();});
+}
+function renderAccounts(){
+  $("#accts").innerHTML=accounts.map(a=>`
+    <div class="acct"><span class="dot"></span><div>
+      <div class="an">${esc(a.name)} <span class="at">· ${esc(a.bank)}</span></div>
+      <div class="am">${esc(a.type)}${a.last4?` · •••• ${esc(a.last4)}`:""}</div>
+    </div></div>`).join("")+
+    `<button class="linkbtn" id="btn-acct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>${accounts.length?"Add account":"Link an account"}</button>`;
+  $("#btn-acct").onclick=()=>openAccountModal();
+}
+function renderFilters(){
+  $("#f-method").innerHTML=`<option value="all">All methods</option>`+METHODS.map(m=>`<option ${filters.method===m?"selected":""}>${m}</option>`).join("");
+  const set=[...new Set(payments.map(p=>monthKey(p.date)).filter(Boolean))].sort().reverse();
+  $("#f-month").innerHTML=`<option value="all">All months</option>`+set.map(m=>`<option value="${m}" ${filters.month===m?"selected":""}>${monthLabel(m)}</option>`).join("");
+}
+function renderLedger(){
+  const list=getFiltered();
+  $("#ledger-count").textContent=`The ledger · ${list.length} ${list.length===1?"entry":"entries"}`;
+  const el=$("#ledger");
+  if(!list.length){
+    el.innerHTML=`<div class="empty"><div class="big">${payments.length===0?"Your ledger is empty":"No matching entries"}</div>
+      <p>${payments.length===0?"Record a payment by hand, or paste your bank SMS alerts and let Khata fill them in for you.":"Try clearing the search or filters above."}</p>
+      ${payments.length===0?'<button class="btn primary" id="empty-add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Record payment</button>':""}</div>`;
+    const ea=$("#empty-add");if(ea)ea.onclick=()=>openPaymentModal();
+    return;
+  }
+  el.innerHTML=list.map(p=>{
+    const d=fmtDate(p.date);const acc=accountById(p.accountId);
+    return `<div class="entry">
+      <div class="edate"><div class="d">${d.day}</div><div class="m">${d.mon}</div>${p.time?`<div class="t">${fmtTime(p.time)}</div>`:""}</div>
+      <div class="emain">
+        <div class="payee">${esc(p.payee)}</div>
+        ${p.purpose?`<div class="purpose">${esc(p.purpose)}</div>`:""}
+        <div class="chips"><span class="chip m">${esc(p.method)}</span><span class="chip">${esc(p.category)}</span>${acc?`<span class="chip">${esc(acc.name)}${acc.last4?` ••${esc(acc.last4)}`:""}</span>`:""}</div>
+      </div>
+      <div class="eright">
+        <div class="eamt ${p.type==="out"?"out":"in"}"><div class="num">${p.type==="out"?"−":"+"}${inr(p.amount)}</div><div class="dir">${p.type==="out"?"Sent":"Received"}</div></div>
+        <div class="acts">
+          <button class="iconbtn" data-edit="${p.id}" aria-label="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+          <button class="iconbtn" data-del="${p.id}" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+  el.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openPaymentModal(payments.find(p=>p.id===b.dataset.edit)));
+  el.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>removePayment(b.dataset.del));
+}
+
+/* ============================ modal shared ============================ */
+function closeModal(){$("#modal-root").innerHTML="";}
+function optionList(arr,sel){return arr.map(x=>`<option ${x===sel?"selected":""}>${x}</option>`).join("");}
+function accountOptions(sel){return `<option value="">No account / cash</option>`+accounts.map(a=>`<option value="${a.id}" ${a.id===sel?"selected":""}>${esc(a.name)} — ${esc(a.bank)}${a.last4?` ••${esc(a.last4)}`:""}</option>`).join("");}
+function wireClose(){document.querySelectorAll("#modal-root [data-close]").forEach(x=>x.onclick=ev=>{if(ev.target===x)closeModal();});}
+
+/* ============================ payment modal ============================ */
+function openPaymentModal(p){
+  const e=p&&p.id?p:{id:null,type:"out",amount:"",payee:"",purpose:"",method:"UPI",category:"Other",accountId:accounts[0]?.id||"",date:todayStr(),time:nowTime()};
+  $("#modal-root").innerHTML=`
+  <div class="overlay" data-close><div class="modal">
+    <div class="mhead"><h2>${e.id?"Edit entry":"Record a payment"}</h2><p>Capture who, how much, how, and what for.</p></div>
+    <div class="mbody">
+      <div class="toggle"><button data-t="out" class="${e.type==="out"?"on out":""}">Sent</button><button data-t="in" class="${e.type==="in"?"on in":""}">Received</button></div>
+      <div class="field"><label>Amount</label><div class="amt-input"><span>₹</span><input id="f-amount" type="number" inputmode="decimal" placeholder="0.00" value="${e.amount}"></div></div>
+      <div class="field"><label id="lbl-payee">${e.type==="out"?"Paid to":"Received from"}</label><input id="f-payee" placeholder="e.g. Saravana Stores" value="${esc(e.payee)}"></div>
+      <div class="field"><label>Purpose</label><input id="f-purpose" placeholder="e.g. Monthly groceries" value="${esc(e.purpose)}"></div>
+      <div class="grid2">
+        <div class="field"><label>Method</label><select id="f-method-in">${optionList(METHODS,e.method)}</select></div>
+        <div class="field"><label>Category</label><select id="f-category">${optionList(CATEGORIES,e.category)}</select></div>
+      </div>
+      <div class="field"><label>Account</label><select id="f-account">${accountOptions(e.accountId)}</select></div>
+      <div class="grid2">
+        <div class="field"><label>Date</label><input id="f-date" type="date" value="${e.date}"></div>
+        <div class="field"><label>Time</label><input id="f-time" type="time" value="${e.time||""}"></div>
+      </div>
+      <div class="mfoot">
+        ${e.id?`<button class="btn danger" id="f-delete">Delete</button>`:""}
+        <button class="btn ghost" data-close>Cancel</button>
+        <button class="btn primary" id="f-save">${e.id?"Save changes":"Record"}</button>
+      </div>
+    </div>
+  </div></div>`;
+  let type=e.type;
+  document.querySelectorAll("#modal-root [data-t]").forEach(b=>b.onclick=()=>{type=b.dataset.t;
+    document.querySelectorAll("#modal-root [data-t]").forEach(x=>x.className=x.dataset.t===type?("on "+type):"");
+    $("#lbl-payee").textContent=type==="out"?"Paid to":"Received from";});
+  wireClose();
+  if(e.id)$("#f-delete").onclick=()=>removePayment(e.id);
+  $("#f-save").onclick=async()=>{
+    const amount=parseFloat($("#f-amount").value);const payee=$("#f-payee").value.trim();
+    if(!amount||amount<=0||!payee){toast("Add an amount and a name");return;}
+    const rec={id:e.id||uid(),type,amount,payee,purpose:$("#f-purpose").value.trim(),method:$("#f-method-in").value,category:$("#f-category").value,accountId:$("#f-account").value,date:$("#f-date").value||todayStr(),time:$("#f-time").value||""};
+    await putRec("payments",rec);
+    const i=payments.findIndex(x=>x.id===rec.id);if(i>=0)payments[i]=rec;else payments.unshift(rec);
+    closeModal();render();toast(e.id?"Entry updated":"Payment recorded");
+  };
+}
+
+/* ============================ account modal ============================ */
+function openAccountModal(acct,fromSettings){
+  const e=acct&&acct.id?acct:{id:null,bank:"",name:"",type:"Savings",last4:""};
+  $("#modal-root").innerHTML=`
+  <div class="overlay" data-close><div class="modal">
+    <div class="mhead"><h2>${e.id?"Edit account":"Add an account"}</h2><p>Tag payments to the account they came from.</p></div>
+    <div class="mbody">
+      <div class="field"><label>Bank / provider</label><input id="a-bank" placeholder="e.g. State Bank of India" value="${esc(e.bank)}"></div>
+      <div class="field"><label>Nickname</label><input id="a-name" placeholder="e.g. Salary account" value="${esc(e.name)}"></div>
+      <div class="grid2">
+        <div class="field"><label>Type</label><select id="a-type">${optionList(ACCOUNT_TYPES,e.type)}</select></div>
+        <div class="field"><label>Last 4 digits</label><input id="a-last4" inputmode="numeric" maxlength="4" placeholder="optional" value="${esc(e.last4)}"></div>
+      </div>
+      <div class="note">For your reference only — store nothing you wouldn't write in a notebook. No full account numbers, no passwords, no card details. This app never contacts your bank.</div>
+      <div class="mfoot"><button class="btn ghost" data-close>Cancel</button><button class="btn primary" id="a-save">${e.id?"Save":"Add account"}</button></div>
+    </div>
+  </div></div>`;
+  wireClose();
+  $("#a-last4").oninput=ev=>ev.target.value=ev.target.value.replace(/\D/g,"").slice(0,4);
+  $("#a-save").onclick=async()=>{
+    const bank=$("#a-bank").value.trim(),name=$("#a-name").value.trim();
+    if(!bank||!name){toast("Add a bank and a nickname");return;}
+    const a={id:e.id||uid(),bank,name,type:$("#a-type").value,last4:$("#a-last4").value};
+    await putRec("accounts",a);
+    const i=accounts.findIndex(x=>x.id===a.id);if(i>=0)accounts[i]=a;else accounts.push(a);
+    render();toast(e.id?"Account updated":"Account added");
+    if(fromSettings)openSettings();else closeModal();
+  };
+}
+
+/* ============================ settings modal ============================ */
+function openSettings(){
+  $("#modal-root").innerHTML=`
+  <div class="overlay" data-close><div class="modal">
+    <div class="mhead"><h2>Settings</h2><p>Accounts, security and your data.</p></div>
+    <div class="mbody" id="settings-body"></div>
+  </div></div>`;
+  wireClose();
+  renderSettingsBody();
+}
+function renderSettingsBody(){
+  const pinSet=!!settings.pin;
+  $("#settings-body").innerHTML=`
+    <div class="sect">
+      <h4>Accounts</h4>
+      ${accounts.length?accounts.map(a=>`
+        <div class="srow"><div class="si"><div class="sn">${esc(a.name)}</div><div class="sm">${esc(a.bank)} · ${esc(a.type)}${a.last4?` · ••${esc(a.last4)}`:""}</div></div>
+          <button class="iconbtn" data-aedit="${a.id}" aria-label="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+          <button class="iconbtn" data-adel="${a.id}" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>
+        </div>`).join(""):`<div class="note" style="margin-bottom:8px">No accounts yet.</div>`}
+      <button class="btn ghost" id="set-addacct" style="width:100%;justify-content:center">+ Add account</button>
+    </div>
+
+    <div class="sect">
+      <h4>App lock</h4>
+      <div class="switch"><span class="lbl2">Require a PIN to open Khata</span><input type="checkbox" id="set-lock" ${settings.lock?"checked":""}></div>
+      <div id="pin-area" class="${settings.lock?"":"hidden"}" style="margin-top:10px">
+        <div class="field" style="margin-bottom:8px"><label>${pinSet?"Change PIN":"Set a 4–6 digit PIN"}</label><input id="set-pin" type="password" inputmode="numeric" maxlength="6" placeholder="${pinSet?"new PIN":"••••"}"></div>
+        <button class="btn ghost" id="set-savepin" style="width:100%;justify-content:center">${pinSet?"Update PIN":"Save PIN"}</button>
+        <div class="note" style="margin-top:9px">A basic lock to keep casual eyes out. It is not encryption — anyone with access to this unlocked device and developer tools could still read the data. Keep your device locked for real protection.</div>
+      </div>
+    </div>
+
+    <div class="sect">
+      <h4>Your data</h4>
+      <div class="datagrid">
+        <button class="btn ghost" id="set-backup">Download backup</button>
+        <button class="btn ghost" id="set-restore">Restore from file</button>
+        <button class="btn ghost" id="set-csv">Export CSV</button>
+        <button class="btn ghost danger-text" id="set-clear">Erase everything</button>
+      </div>
+      <div class="note" style="margin-top:10px">Data lives only in this browser. Use Backup to keep a copy or move to another device. Restoring merges into your current ledger.</div>
+    </div>
+
+    <div class="sect">
+      <h4>About</h4>
+      <div class="note">Khata · a private payment ledger. ${payments.length} entries, ${accounts.length} accounts. Stored ${useLS?"in local storage":"in this browser's database"}.</div>
+    </div>
+
+    <div class="mfoot"><button class="btn ghost" data-close>Done</button></div>`;
+  wireClose();
+
+  $("#set-addacct").onclick=()=>openAccountModal(null,true);
+  $("#settings-body").querySelectorAll("[data-aedit]").forEach(b=>b.onclick=()=>openAccountModal(accounts.find(a=>a.id===b.dataset.aedit),true));
+  $("#settings-body").querySelectorAll("[data-adel]").forEach(b=>b.onclick=async()=>{
+    const a=accounts.find(x=>x.id===b.dataset.adel);if(!a)return;
+    const linked=payments.filter(p=>p.accountId===a.id).length;
+    if(!confirm(`Delete account "${a.name}"?${linked?`\n\n${linked} linked entr${linked===1?"y":"ies"} will stay in your ledger but lose the account tag.`:""}`))return;
+    await delRec("accounts",a.id);accounts=accounts.filter(x=>x.id!==a.id);render();renderSettingsBody();toast("Account deleted");
+  });
+
+  $("#set-lock").onchange=async e=>{
+    settings.lock=e.target.checked;
+    if(!settings.lock){settings.pin="";}
+    await metaPut("settings",settings);
+    renderSettingsBody();toast(settings.lock?"Lock on — set a PIN":"Lock off");
+  };
+  const sp=$("#set-savepin");if(sp)sp.onclick=async()=>{
+    const v=$("#set-pin").value.trim();
+    if(!/^\d{4,6}$/.test(v)){toast("Use 4 to 6 digits");return;}
+    settings.pin=hashPin(v);settings.lock=true;await metaPut("settings",settings);
+    renderSettingsBody();toast("PIN saved");
+  };
+
+  $("#set-backup").onclick=doBackup;
+  $("#set-restore").onclick=()=>$("#restore-file").click();
+  $("#set-csv").onclick=exportCSV;
+  $("#set-clear").onclick=async()=>{
+    if(!confirm("Erase ALL entries and accounts on this device? This cannot be undone. Download a backup first if unsure."))return;
+    await clearStore("payments");await clearStore("accounts");
+    payments=[];accounts=[];render();renderSettingsBody();toast("Everything erased");
+  };
+}
+
+/* ============================ SMS import ============================ */
+let smsDrafts=[];
+function openImportModal(){
+  smsDrafts=[];
+  $("#modal-root").innerHTML=`
+  <div class="overlay" data-close><div class="modal wide">
+    <div class="mhead"><h2>Import from SMS</h2><p>Paste the transaction alerts your bank sent you — one or many. Khata reads the amount, payee, date and method, and you confirm before saving.</p></div>
+    <div class="mbody">
+      <div id="import-step1">
+        <div class="field"><label>Paste bank SMS (separate multiple with a blank line)</label>
+          <textarea id="sms-text" placeholder="Rs.500.00 debited from a/c XX1234 on 12-06-26 to VPA shop@okhdfc -SBI
+
+INR 1,200 spent on Card x1234 at AMAZON on 12-06-2026"></textarea></div>
+        <div class="mfoot"><button class="btn ghost" data-close>Cancel</button><button class="btn primary" id="sms-parse">Read messages</button></div>
+      </div>
+      <div id="import-step2" class="hidden">
+        <div class="eyebrow" id="draft-head" style="margin:0 0 10px"></div>
+        <div class="drafts" id="drafts"></div>
+        <div class="mfoot"><button class="btn ghost" id="sms-back">Back</button><button class="btn primary" id="sms-save">Add to ledger</button></div>
+      </div>
+    </div>
+  </div></div>`;
+  wireClose();
+  $("#sms-parse").onclick=()=>{
+    const chunks=splitSMS($("#sms-text").value);
+    smsDrafts=chunks.map(c=>parseSMS(c)).filter(Boolean).map(d=>{
+      const acc=accountByLast4(d.last4);
+      return {include:true,type:d.type,amount:String(d.amount),payee:d.payee,purpose:"",method:d.method,category:"Other",accountId:acc?acc.id:"",date:d.date,time:"",raw:d.raw};
+    });
+    if(!smsDrafts.length){toast("No transactions found in that text");return;}
+    $("#import-step1").classList.add("hidden");$("#import-step2").classList.remove("hidden");renderDrafts();
+  };
+  $("#sms-back").onclick=()=>{$("#import-step2").classList.add("hidden");$("#import-step1").classList.remove("hidden");};
+}
+function renderDrafts(){
+  $("#draft-head").textContent=`Found ${smsDrafts.length} transaction${smsDrafts.length!==1?"s":""} · review and confirm`;
+  const c=$("#drafts");
+  c.innerHTML=smsDrafts.map((d,i)=>`
+    <div class="draft ${d.include?"":"off"}" data-i="${i}">
+      <div class="draft-top"><input type="checkbox" data-inc="${i}" ${d.include?"checked":""}><span class="ddir ${d.type}">${d.type==="out"?"Sent":"Received"}</span><span class="draw">${esc(d.raw.slice(0,70))}</span></div>
+      <div class="draft-grid">
+        <div class="field"><label>Amount (₹)</label><input data-f="amount" data-i="${i}" type="number" value="${d.amount}"></div>
+        <div class="field"><label>Type</label><select data-f="type" data-i="${i}"><option value="out" ${d.type==="out"?"selected":""}>Sent</option><option value="in" ${d.type==="in"?"selected":""}>Received</option></select></div>
+        <div class="field full"><label>Payee</label><input data-f="payee" data-i="${i}" value="${esc(d.payee)}" placeholder="who"></div>
+        <div class="field full"><label>Purpose</label><input data-f="purpose" data-i="${i}" value="${esc(d.purpose)}" placeholder="optional"></div>
+        <div class="field"><label>Method</label><select data-f="method" data-i="${i}">${optionList(METHODS,d.method)}</select></div>
+        <div class="field"><label>Category</label><select data-f="category" data-i="${i}">${optionList(CATEGORIES,d.category)}</select></div>
+        <div class="field"><label>Account</label><select data-f="accountId" data-i="${i}">${accountOptions(d.accountId)}</select></div>
+        <div class="field"><label>Date</label><input data-f="date" data-i="${i}" type="date" value="${d.date}"></div>
+      </div>
+    </div>`).join("");
+  c.querySelectorAll("[data-inc]").forEach(el=>el.onchange=()=>{const i=+el.dataset.inc;smsDrafts[i].include=el.checked;el.closest(".draft").classList.toggle("off",!el.checked);});
+  c.querySelectorAll("[data-f]").forEach(el=>el.oninput=el.onchange=()=>{smsDrafts[+el.dataset.i][el.dataset.f]=el.value;});
+  $("#sms-save").onclick=async()=>{
+    const chosen=smsDrafts.filter(d=>d.include&&parseFloat(d.amount)>0&&d.payee.trim());
+    if(!chosen.length){toast("Nothing to add — check amounts and names");return;}
+    for(const d of chosen){
+      const rec={id:uid(),type:d.type,amount:parseFloat(d.amount),payee:d.payee.trim(),purpose:d.purpose.trim(),method:d.method,category:d.category,accountId:d.accountId,date:d.date,time:d.time||""};
+      await putRec("payments",rec);payments.unshift(rec);
+    }
+    closeModal();render();toast(`${chosen.length} entr${chosen.length===1?"y":"ies"} imported`);
+  };
+}
+
+/* ============================ actions ============================ */
+async function removePayment(id){await delRec("payments",id);payments=payments.filter(p=>p.id!==id);closeModal();render();toast("Entry removed");}
+function exportCSV(){
+  const list=getFiltered();if(!list.length){toast("Nothing to export");return;}
+  const head=["Date","Time","Type","Payee","Purpose","Method","Category","Account","Amount (INR)"];
+  const rows=list.map(p=>{const a=accountById(p.accountId);return [p.date,p.time||"",p.type==="out"?"Sent":"Received",p.payee,p.purpose,p.method,p.category,a?`${a.name}${a.last4?" .."+a.last4:""}`:"-",p.amount];});
+  const q=v=>`"${String(v).replace(/"/g,'""')}"`;
+  download(new Blob([[head,...rows].map(r=>r.map(q).join(",")).join("\n")],{type:"text/csv;charset=utf-8;"}),`khata-ledger-${todayStr()}.csv`);
+  toast("CSV exported");
+}
+function doBackup(){download(new Blob([JSON.stringify({app:"khata",version:2,exported:new Date().toISOString(),payments,accounts},null,2)],{type:"application/json"}),`khata-backup-${todayStr()}.json`);toast("Backup downloaded");}
+$("#restore-file").onchange=e=>{
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=async()=>{
+    try{
+      const data=JSON.parse(r.result);
+      const ids=new Set(payments.map(p=>p.id));const aids=new Set(accounts.map(a=>a.id));let added=0;
+      for(const a of (data.accounts||[])){if(a&&a.id&&!aids.has(a.id)){await putRec("accounts",a);accounts.push(a);aids.add(a.id);}}
+      for(const p of (data.payments||[])){if(p&&p.id&&!ids.has(p.id)){await putRec("payments",p);payments.push(p);ids.add(p.id);added++;}}
+      render();if($("#settings-body"))renderSettingsBody();else closeModal();toast(`Restored ${added} entr${added===1?"y":"ies"}`);
+    }catch(err){toast("Couldn't read that file");}
+    e.target.value="";
+  };
+  r.readAsText(file);
+};
+function download(blob,name){const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);}
+
+/* ============================ toast ============================ */
+let toastT=null;
+function toast(msg){const r=$("#toast-root");r.innerHTML=`<div class="toast">${esc(msg)}</div>`;clearTimeout(toastT);toastT=setTimeout(()=>r.innerHTML="",2200);}
+
+/* ============================ lock ============================ */
+function revealApp(){$("#lock").classList.add("hidden");$("#app-wrap").style.display="";render();}
+function showLock(){
+  $("#lock").classList.remove("hidden");$("#app-wrap").style.display="none";
+  const inp=$("#lock-pin");setTimeout(()=>inp.focus(),50);
+  const tryUnlock=()=>{
+    if(hashPin(inp.value.trim())===settings.pin){revealApp();}
+    else{$("#lock-err").textContent="Wrong PIN";inp.value="";inp.focus();}
+  };
+  $("#lock-go").onclick=tryUnlock;
+  inp.onkeydown=e=>{if(e.key==="Enter")tryUnlock();$("#lock-err").textContent="";};
+}
+
+/* ============================ install / manifest ============================ */
+function setupManifest(){
+  try{
+    const svg=`<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512'><rect width='512' height='512' rx='104' fill='#6e2230'/><text x='256' y='358' font-family='Georgia,serif' font-size='300' fill='#a9854a' text-anchor='middle'>₹</text></svg>`;
+    const icon="data:image/svg+xml,"+encodeURIComponent(svg);
+    const apple=document.createElement("link");apple.rel="apple-touch-icon";apple.href=icon;document.head.appendChild(apple);
+    const fav=document.createElement("link");fav.rel="icon";fav.href=icon;document.head.appendChild(fav);
+    const manifest={name:"Khata — Payment Ledger",short_name:"Khata",display:"standalone",background_color:"#e9e6df",theme_color:"#6e2230",icons:[{src:icon,sizes:"512x512",type:"image/svg+xml",purpose:"any maskable"}]};
+    const url=URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:"application/manifest+json"}));
+    const link=document.createElement("link");link.rel="manifest";link.href=url;document.head.appendChild(link);
+  }catch(e){}
+}
+
+/* ============================ wire up ============================ */
+$("#btn-add").onclick=()=>openPaymentModal();
+$("#btn-import").onclick=openImportModal;
+$("#btn-settings").onclick=openSettings;
+$("#btn-csv").onclick=exportCSV;
+$("#search").oninput=e=>{filters.query=e.target.value;renderLedger();};
+$("#f-method").onchange=e=>{filters.method=e.target.value;renderLedger();};
+$("#f-month").onchange=e=>{filters.month=e.target.value;renderLedger();};
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("#lock").classList.contains("hidden"))closeModal();});
+
+/* ============================ boot ============================ */
+(async function init(){
+  setupManifest();
+  await openDB();
+  try{payments=await getAll("payments");accounts=await getAll("accounts");const s=await metaGet("settings");if(s)settings=s;}
+  catch(e){payments=[];accounts=[];}
+  if(settings.lock&&settings.pin)showLock();else revealApp();
+})();
+</script>
+</body>
+</html>
